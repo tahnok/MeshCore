@@ -637,6 +637,8 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, const char* command, ch
           *(dp-1) = 0; // remove last CR
         }
       }
+    } else if (memcmp(command, "sensor debug", 12) == 0) {
+      _sensors->debugPrint(reply);
 #if ENV_INCLUDE_GPS == 1
     } else if (memcmp(command, "gps on", 6) == 0) {
       if (_sensors->setSettingValue("gps", "1")) {

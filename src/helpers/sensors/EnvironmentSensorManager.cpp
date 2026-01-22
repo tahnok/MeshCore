@@ -543,6 +543,136 @@ bool EnvironmentSensorManager::setSettingValue(const char* name, const char* val
   return false;  // not supported
 }
 
+void EnvironmentSensorManager::debugPrint(char* reply) {
+  char* dp = reply;
+  *dp = 0;
+
+  #if ENV_INCLUDE_AHTX0
+  if (AHTX0_initialized) {
+    sensors_event_t humidity, temp;
+    AHTX0.getEvent(&humidity, &temp);
+    sprintf(dp, "AHT:%.1fC/%.0f%%\n", temp.temperature, humidity.relative_humidity);
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_BME680
+  if (BME680_initialized && BME680.performReading()) {
+    sprintf(dp, "BME680:%.1fC/%.0f%%/%.0fhPa/%.0fohm\n",
+      BME680.temperature, BME680.humidity, BME680.pressure / 100.0, BME680.gas_resistance);
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_BME280
+  if (BME280_initialized) {
+    sprintf(dp, "BME280:%.1fC/%.0f%%/%.0fhPa\n",
+      BME280.readTemperature(), BME280.readHumidity(), BME280.readPressure() / 100.0);
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_BMP280
+  if (BMP280_initialized) {
+    sprintf(dp, "BMP280:%.1fC/%.0fhPa\n", BMP280.readTemperature(), BMP280.readPressure() / 100.0);
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_SHTC3
+  if (SHTC3_initialized) {
+    sensors_event_t humidity, temp;
+    SHTC3.getEvent(&humidity, &temp);
+    sprintf(dp, "SHTC3:%.1fC/%.0f%%\n", temp.temperature, humidity.relative_humidity);
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_SHT4X
+  if (SHT4X_initialized) {
+    float temperature, humidity;
+    if (SHT4X.measureLowestPrecision(temperature, humidity) == 0) {
+      sprintf(dp, "SHT4X:%.1fC/%.0f%%\n", temperature, humidity);
+      dp = strchr(dp, 0);
+    }
+  }
+  #endif
+
+  #if ENV_INCLUDE_LPS22HB
+  if (LPS22HB_initialized) {
+    sprintf(dp, "LPS22HB:%.1fC/%.0fhPa\n", BARO.readTemperature(), BARO.readPressure());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_BMP085
+  if (BMP085_initialized) {
+    sprintf(dp, "BMP085:%.1fC/%.0fPa\n", BMP085.readTemperature(), (float)BMP085.readPressure());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_INA3221
+  if (INA3221_initialized) {
+    for (int i = 0; i < 3; i++) {
+      if (INA3221.isChannelEnabled(i)) {
+        float v = INA3221.getBusVoltage(i);
+        float a = INA3221.getCurrentAmps(i);
+        sprintf(dp, "INA3221.%d:%.2fV/%.3fA\n", i, v, a);
+        dp = strchr(dp, 0);
+      }
+    }
+  }
+  #endif
+
+  #if ENV_INCLUDE_INA219
+  if (INA219_initialized) {
+    sprintf(dp, "INA219:%.2fV/%.0fmA\n", INA219.getBusVoltage_V(), INA219.getCurrent_mA());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_INA260
+  if (INA260_initialized) {
+    sprintf(dp, "INA260:%.2fV/%.0fmA\n", INA260.readBusVoltage() / 1000.0, INA260.readCurrent());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_INA226
+  if (INA226_initialized) {
+    sprintf(dp, "INA226:%.2fV/%.0fmA\n", INA226.getBusVoltage(), INA226.getCurrent_mA());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_MLX90614
+  if (MLX90614_initialized) {
+    sprintf(dp, "MLX90614:%.1fC/%.1fC\n", MLX90614.readObjectTempC(), MLX90614.readAmbientTempC());
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  #if ENV_INCLUDE_VL53L0X
+  if (VL53L0X_initialized) {
+    VL53L0X_RangingMeasurementData_t measure;
+    VL53L0X.rangingTest(&measure, false);
+    if (measure.RangeStatus != 4) {
+      sprintf(dp, "VL53L0X:%dmm\n", measure.RangeMilliMeter);
+    } else {
+      sprintf(dp, "VL53L0X:OOR\n");
+    }
+    dp = strchr(dp, 0);
+  }
+  #endif
+
+  if (dp > reply) {
+    *(dp - 1) = 0;  // remove trailing newline
+  } else {
+    strcpy(reply, "No sensors");
+  }
+}
+
 #if ENV_INCLUDE_GPS
 void EnvironmentSensorManager::initBasicGPS() {
 
